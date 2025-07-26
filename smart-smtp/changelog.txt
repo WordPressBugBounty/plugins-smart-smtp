@@ -1,0 +1,15 @@
+
+== Changelog ==
+
+= 1.1.1   - 21-04-2025 =
+* Feature - Dashboard page.
+* Feature - Fallback connection.
+* Feature - Gmail service provider.
+* Tweak   - Enforced "From Name" and "From Email Address" options.
+* Fix 	  - Minor design improvements.
+
+= 1.0.1  - 29-10-2024 =
+* Fix    - Readme content.
+
+= 1.0.0   - 29-10-2024 =
+* Feature - Initial release.

@@ -1,0 +1,770 @@
+# Copyright (C) 2024 ThemeGrill
+# This file is distributed under the GNU General Public License v3.0.
+msgid ""
+msgstr ""
+"Project-Id-Version: SmartSMTP 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/smart-smtp\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2024-10-29T09:24:20+05:45\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.10.0\n"
+"X-Domain: smart-smtp\n"
+
+#. Plugin Name of the plugin
+#: smart-smtp.php
+#: includes/Controller/Admin/MenusController.php:52
+msgid "SmartSMTP"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: smart-smtp.php
+msgid "https://wordpress.org/plugins/smart-smtp"
+msgstr ""
+
+#. Description of the plugin
+#: smart-smtp.php
+msgid "Effortlessly send reliable and secure emails through SMTP with the SmartSMTP plugin."
+msgstr ""
+
+#. Author of the plugin
+#: smart-smtp.php
+msgid "ThemeGrill"
+msgstr ""
+
+#. Author URI of the plugin
+#: smart-smtp.php
+msgid "https://themegrill.com/"
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/Admin/MenusController.php:52
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Smart SMTP"
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/ChangelogsController.php:46
+#: includes/Controller/ChangelogsController.php:46
+msgid "Failed to read changelog."
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/MailLogsController.php:48
+#: includes/Controller/MailLogsController.php:48
+msgid "Request data not found."
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/MailLogsController.php:69
+#: includes/Controller/MailLogsController.php:69
+msgid "Mail logs data loaded successfully"
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/MailLogsController.php:93
+#: includes/Controller/MailLogsController.php:93
+msgid "Action not found."
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/MailLogsController.php:103
+#: includes/Controller/MailLogsController.php:103
+msgid "Data not found."
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/MailLogsController.php:114
+#: build/smart-smtp/includes/Controller/MailLogsController.php:138
+#: includes/Controller/MailLogsController.php:114
+#: includes/Controller/MailLogsController.php:138
+msgid "All selected logs deleted successfully!!"
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/ProviderController.php:83
+#: build/smart-smtp/includes/Controller/TestMailController.php:49
+#: includes/Controller/ProviderController.php:83
+#: includes/Controller/TestMailController.php:49
+msgid "Form data not found."
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/ProviderController.php:95
+#: includes/Controller/ProviderController.php:95
+msgid "Mail Configuration data is empty."
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/ProviderController.php:105
+#: includes/Controller/ProviderController.php:105
+msgid "Missing provider type!!"
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/ProviderController.php:128
+#: includes/Controller/ProviderController.php:128
+msgid "Api key authentication failed."
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/ProviderController.php:149
+#: includes/Controller/ProviderController.php:149
+msgid "Mail provider setting saved successfully."
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/ProviderController.php:157
+#: includes/Controller/ProviderController.php:157
+msgid "Mail configuration is up to date."
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/TestMailController.php:60
+#: includes/Controller/TestMailController.php:60
+msgid "Send Test Mail Configuration data is empty."
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/TestMailController.php:77
+#: build/smart-smtp/includes/Services/Providers/Brevo/Mailer.php:433
+#: includes/Controller/TestMailController.php:77
+#: includes/Services/Providers/Brevo/Mailer.php:433
+msgid "Sent Successfully"
+msgstr ""
+
+#: build/smart-smtp/includes/Controller/TestMailController.php:84
+#: includes/Controller/TestMailController.php:84
+msgid "Send Failed!!"
+msgstr ""
+
+#: build/smart-smtp/includes/Middleware/CommonAuth.php:33
+#: includes/Middleware/CommonAuth.php:33
+msgid "You do not have permissions to perform this action."
+msgstr ""
+
+#: build/smart-smtp/includes/Middleware/CommonAuth.php:41
+#: includes/Middleware/CommonAuth.php:41
+msgid "You are not allowed to access this resource."
+msgstr ""
+
+#: build/smart-smtp/includes/SmartSMTP.php:54
+#: includes/SmartSMTP.php:54
+msgid "View Mail Configuration Settings"
+msgstr ""
+
+#: build/smart-smtp/includes/SmartSMTP.php:54
+#: includes/SmartSMTP.php:54
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Settings"
+msgstr ""
+
+#: build/smart-smtp/includes/SmartSMTP.php:88
+#: includes/SmartSMTP.php:88
+msgid "View User Registration Form Restriction documentation"
+msgstr ""
+
+#: build/smart-smtp/includes/SmartSMTP.php:88
+#: includes/SmartSMTP.php:88
+msgid "Docs"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Mail Provider"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Test Mail"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Mail Logs"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Products"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Version %s"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "You are currently using Smart SMTP"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Latest Updates"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Search by item"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Search by date"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Apply"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Mail Log Detail"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Status"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Sent"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Failed"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Sent at"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Mailer"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Subject"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Header"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Content"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Log"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Log deleted successfully"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Failed to delete log"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Failed to load log content"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Sent At"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Sent From"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Sent To"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Action"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Delete"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "View"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "No mail logs found."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Show Log per page"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "5"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "10"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "25"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "50"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "items"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Keep track of all the emails you’ve sent. Filter and view detailed activity for each email sent from your website."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Api Key"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Api Key is required."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "From Email Address"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Enter the email address that will send the emails."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "From Email Address is required."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Invalid email address."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "From Name"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Enter the name that will appear as the sender of the emails."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "From Name is required."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Enter the API Key from Brevo. Grab it from this link"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Reply-To Email Address"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Enter the email address where replies to your emails will be sent."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "SMTP Host"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid " Enter the SMTP server address used to send emails."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Host is required."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Type of Encryption"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Select the type of encryption to secure the connection to the SMTP server. Common options include “SSL” (Secure Sockets Layer) and “TLS” (Transport Layer Security)."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "TLS"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "SSL"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "SMTP Port"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Select the Port number used to connect to the SMTP server."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "587"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "465"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "SMTP Authentication"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Enable if your SMTP server requires a username and password to send emails."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Username"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Enter the username for authenticating with the SMTP server."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Username is required."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Password"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Enter the password associated with the SMTP server username. This is used to authenticate and establish a secure connection."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Password is required."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Default SMTP"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "The \"Default\" option does not use SMTP or any Email Service Provider, which may result in unreliable email delivery."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Brevo"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Looks like you’re all set up! How about verifying the connection by sending our test emails."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Brevo API is not authenticated. Please configure the fields above."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Other SMTP"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Seems like the custom SMTP configuration has not been set up properly"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Please Set Up Your Initial Email Service Provider Connection."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Pick any one of the following Email Service Providers."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Active"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Please fill up configuration setting for the selected provider."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Inactive"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Save Connection Settings"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Welcome to Smart SMTP!"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Thank you for installing the Smart SMTP plugin. Let’s get started with sending out valuable emails right away!"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Verify With A Test Email"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Ensure your SMTP connection is working correctly. Why not send a test email?"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Send To"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Enter the email address to test the connection."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Mail address"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Send To is required."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Invalid email address"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "HTML Formatted"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Enable to receive the test email in a standard template. Disable to receive text only."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "You cannot send an email. Mailer is not properly configured. Please check your "
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "configuration settings."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Send Test Mail"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "The best Drag and drop user registration form and login form builder with a user profile page, email notification, user roles assignment, and more."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "User Forms, Profiles, Roles, Notifications."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Revolutionize e-learning effortlessly with Masteriyo, a WordPress LMS plugin. Sell courses with quizzes, assignments, etc., for a dynamic learning experience."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "WordPress LMS plugin with Quiz Builder"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Fuel your digital creativity with BlockArt Blocks, a dynamic collection of custom Gutenberg blocks for designing captivating WordPress sites."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Custom Gutenberg Blocks Plugin"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Experience advanced Gutenberg blocks with Magazine Blocks, designed for crafting stunning magazine and news websites."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Gutenberg Blocks for Magazine-style Websites"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Unlock boundless website possibilities with Zakra, a versatile multipurpose theme offering over 40 free starter sites for a tailored web experience."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Elevate your website's style with Colormag, the go-to choice for news, blogs, and magazines. Embark on a digital spectacle of website-building excellence! "
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "%s plugin activated successfully"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "An error occurred"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "%s plugin installed and activated successfully"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Cancel"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Activate"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Install"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Learn More"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Live Demo"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Activated"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Activate Plugin"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Install Plugin"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Are you sure? You want to activate %s plugin."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Are you sure? You want to install and activate %s plugin."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Other Products"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Explore our other products."
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Plugins"
+msgstr ""
+
+#: build/smart-smtp/dist/main.js:560
+#: dist/main.js:560
+msgid "Themes"
+msgstr ""
