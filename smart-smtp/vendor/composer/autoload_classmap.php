@@ -516,6 +516,7 @@ return array(
     'Psr\\Log\\Test\\LoggerInterfaceTest' => $vendorDir . '/psr/log/Psr/Log/Test/LoggerInterfaceTest.php',
     'Psr\\Log\\Test\\TestLogger' => $vendorDir . '/psr/log/Psr/Log/Test/TestLogger.php',
     'SmartSMTP\\Controller\\Admin\\AdminController' => $baseDir . '/includes/Controller/Admin/AdminController.php',
+    'SmartSMTP\\Controller\\Admin\\GoogleConnectController' => $baseDir . '/includes/Controller/Admin/GoogleConnectController.php',
     'SmartSMTP\\Controller\\Admin\\MenusController' => $baseDir . '/includes/Controller/Admin/MenusController.php',
     'SmartSMTP\\Controller\\Admin\\ScriptStyleController' => $baseDir . '/includes/Controller/Admin/ScriptStyleController.php',
     'SmartSMTP\\Controller\\MailLogsController' => $baseDir . '/includes/Controller/MailLogsController.php',

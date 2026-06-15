@@ -9,6 +9,8 @@
 
 namespace SmartSMTP\Controller\Admin;
 
+use SmartSMTP\Controller\Admin\GoogleConnectController;
+use SmartSMTP\Controller\ProviderController;
 use SmartSMTP\Helper;
 use SmartSMTP\Traits\Singleton;
 
@@ -199,6 +201,9 @@ class ScriptStyleController {
 					},
 					array()
 				),
+				'googleConnectUrl'   => esc_url( GoogleConnectController::init()->get_connect_url() ),
+				'googleIsConnected'  => ( new ProviderController() )->is_mailer_complete( 'primary', 'gmail' ),
+'googleIsSSL'        => is_ssl(),
 				'themes'             => array(
 					'zakra'    => strpos( $current_theme, 'zakra' ) !== false ? 'active' : (
 						in_array( 'zakra', $installed_theme_slugs, true ) ? 'inactive' : 'not-installed'

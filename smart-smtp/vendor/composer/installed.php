@@ -1,7 +1,7 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => '1.1.2',
-        'version' => '1.1.2.0',
+        'pretty_version' => '1.1.3',
+        'version' => '1.1.3.0',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -209,8 +209,8 @@
             ),
         ),
         'smart-smtp/smart-smtp' => array(
-            'pretty_version' => '1.1.2',
-            'version' => '1.1.2.0',
+            'pretty_version' => '1.1.3',
+            'version' => '1.1.3.0',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

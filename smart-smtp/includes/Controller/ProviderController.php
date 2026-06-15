@@ -184,11 +184,29 @@ class ProviderController {
 					$sanitized_form_data['access_token']  = $old_settings['access_token'];
 					$sanitized_form_data['refresh_token'] = $old_settings['refresh_token'];
 				}
+			} elseif ( $this->is_mailer_complete( $conn, 'gmail' ) ) {
+				// One-click / OAuth: tokens are stored without legacy auth_token; allow saving From email etc.
+				$old_settings = $this->get_provider_config_by_conn( $conn, $sanitized_form_data['providerType'] );
+
+				$sanitized_form_data['access_token']  = $old_settings['access_token'];
+				$sanitized_form_data['refresh_token'] = $old_settings['refresh_token'];
+
+				// Preserve client_id and client_secret — these are not exposed in the UI when connected.
+				if ( ! empty( $old_settings['client_id'] ) ) {
+					$sanitized_form_data['client_id'] = $old_settings['client_id'];
+				}
+				if ( ! empty( $old_settings['client_secret'] ) ) {
+					$sanitized_form_data['client_secret'] = $old_settings['client_secret'];
+				}
 			} else {
+				$is_one_click_setup = ! empty( $provider_config['one_click_setup'] );
+				$error_message      = $is_one_click_setup
+					? esc_html__( 'Please connect to your google account', 'smart-smtp' )
+					: esc_html__( 'Before saving, please get the auth token for authentication.', 'smart-smtp' );
 
 				return new \WP_REST_Response(
 					array(
-						'message' => esc_html__( 'Before saving, please get the auth token for authentication.', 'smart-smtp' ),
+						'message' => $error_message,
 					),
 					'400'
 				);

@@ -11,6 +11,7 @@ namespace SmartSMTP;
 defined( 'ABSPATH' ) || exit;
 
 use SmartSMTP\Controller\Admin\AdminController;
+use SmartSMTP\Controller\Admin\GoogleConnectController;
 use SmartSMTP\Helper;
 use SmartSMTP\Controller\Admin\MenusController;
 use SmartSMTP\Controller\Admin\ScriptStyleController;
@@ -105,6 +106,7 @@ final class SmartSMTP {
 			AdminController::init();
 			ScriptStyleController::init();
 			MenusController::init();
+			GoogleConnectController::init();
 		}
 		Routes::init();
 		MailLogsMigration::init();
