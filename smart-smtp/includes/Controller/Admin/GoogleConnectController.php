@@ -48,8 +48,8 @@ class GoogleConnectController {
 	/** Google token endpoint. */
 	const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
-	/** Provider connection slot that receives the stored tokens. */
-	const CONN = 'primary';
+	/** Valid connection slots. */
+	const VALID_CONNS = array( 'primary', 'fallback' );
 
 	/**
 	 * Constructor — registers WordPress hooks.
@@ -128,36 +128,62 @@ class GoogleConnectController {
 		}
 
 		// ── Retrieve saved PKCE data for this user ────────────────────────────
-		$user_id   = get_current_user_id();
-		$transient = get_transient( self::TRANSIENT_PREFIX . $user_id );
+		$user_id       = get_current_user_id();
+		$conn          = 'primary';
+		$transient_key = '';
 
-		if ( false === $transient || ! is_array( $transient ) ) {
-			$this->redirect_with_notice( 'error', __( 'Session expired or not found. Please start the connection again.', 'smart-smtp' ) );
+		// Derive the connection from the state prefix (most reliable — OAuth returns
+		// state verbatim). Fall back to the redirect_back `conn` param, then to trying
+		// both slots.
+		$conn_from_state = '';
+		if ( false !== strpos( $state, '_' ) ) {
+			$prefix = substr( $state, 0, strpos( $state, '_' ) );
+			if ( in_array( $prefix, self::VALID_CONNS, true ) ) {
+				$conn_from_state = $prefix;
+			}
 		}
 
-		// ── Verify state (CSRF protection) ────────────────────────────────────
-		// hash_equals() is timing-safe — prevents timing-attack enumeration.
-		if ( ! hash_equals( $transient['state'], $state ) ) {
-			delete_transient( self::TRANSIENT_PREFIX . $user_id );
-			$this->redirect_with_notice( 'error', __( 'State mismatch — possible CSRF attack. Connection aborted.', 'smart-smtp' ) );
+		$conn_param = isset( $_GET['conn'] ) ? sanitize_text_field( wp_unslash( $_GET['conn'] ) ) : '';
+
+		if ( '' !== $conn_from_state ) {
+			$candidates = array( $conn_from_state );
+		} elseif ( in_array( $conn_param, self::VALID_CONNS, true ) ) {
+			$candidates = array( $conn_param );
+		} else {
+			$candidates = self::VALID_CONNS;
+		}
+
+		foreach ( $candidates as $candidate ) {
+			$key = self::TRANSIENT_PREFIX . $user_id . '_' . $candidate;
+			$t   = get_transient( $key );
+			if ( $t && is_array( $t ) && ! empty( $t['state'] ) && hash_equals( $t['state'], $state ) ) {
+				$conn          = $candidate;
+				$transient_key = $key;
+				$transient     = $t;
+				break;
+			}
+		}
+
+		if ( empty( $transient_key ) ) {
+			$this->redirect_with_notice( 'error', __( 'Session expired or not found. Please start the connection again.', 'smart-smtp' ) );
 		}
 
 		$code_verifier = $transient['code_verifier'];
 
 		// Delete immediately — transient is single-use to prevent replay attacks.
-		delete_transient( self::TRANSIENT_PREFIX . $user_id );
+		delete_transient( $transient_key );
 
 		// ── Exchange code for tokens ──────────────────────────────────────────
 		$token_response = $this->exchange_code( $code, $code_verifier, $client_id, $client_secret );
 
 		if ( is_wp_error( $token_response ) ) {
-			$this->redirect_with_notice( 'error', $token_response->get_error_message() );
+			$this->redirect_with_notice( 'error', $token_response->get_error_message(), $conn );
 		}
 
 		// ── Persist tokens ────────────────────────────────────────────────────
-		$this->save_tokens( $token_response, $client_secret );
+		$this->save_tokens( $token_response, $client_secret, $conn );
 
-		$this->redirect_with_notice( 'success', __( 'Google account connected successfully!', 'smart-smtp' ) );
+		$this->redirect_with_notice( 'success', __( 'Google account connected successfully!', 'smart-smtp' ), $conn );
 	}
 
 	// -------------------------------------------------------------------------
@@ -178,16 +204,21 @@ class GoogleConnectController {
 			wp_die( esc_html__( 'You do not have permission to perform this action.', 'smart-smtp' ) );
 		}
 
+		$conn = isset( $_POST['connection'] ) ? sanitize_text_field( wp_unslash( $_POST['connection'] ) ) : 'primary';
+		$conn = in_array( $conn, self::VALID_CONNS, true ) ? $conn : 'primary';
+
 		$prov_ctrl = new ProviderController();
-		$settings  = $prov_ctrl->get_provider_config_by_conn( self::CONN, 'gmail' );
+		$settings  = $prov_ctrl->get_provider_config_by_conn( $conn, 'gmail' );
 
 		$settings['access_token']  = '';
 		$settings['refresh_token'] = '';
 		$settings['auth_token']    = '';
+		$settings['client_id']     = '';
+		$settings['client_secret'] = '';
 
-		$prov_ctrl->update_provider_config_by_conn( self::CONN, $settings );
+		$prov_ctrl->update_provider_config_by_conn( $conn, $settings );
 
-		$this->redirect_with_notice( 'success', __( 'Google account disconnected.', 'smart-smtp' ) );
+		$this->redirect_with_notice( 'success', __( 'Google account disconnected.', 'smart-smtp' ), $conn );
 	}
 
 	// -------------------------------------------------------------------------
@@ -220,16 +251,17 @@ class GoogleConnectController {
 	 *
 	 * @return string
 	 */
-	public function get_connect_url(): string {
-		if ( $this->is_connected() || ! is_ssl() ) {
+	public function get_connect_url( string $conn = 'primary' ): string {
+		if ( $this->is_connected( $conn ) || ! is_ssl() ) {
 			return '';
 		}
-		return $this->build_start_url();
+		return $this->build_start_url( $conn );
 	}
 
-	private function build_start_url(): string {
-		$user_id  = get_current_user_id();
-		$existing = get_transient( self::TRANSIENT_PREFIX . $user_id );
+	private function build_start_url( string $conn = 'primary' ): string {
+		$user_id       = get_current_user_id();
+		$transient_key = self::TRANSIENT_PREFIX . $user_id . '_' . $conn;
+		$existing      = get_transient( $transient_key );
 
 		// Reuse existing PKCE params if still valid — prevents overwriting the
 		// transient on every React render, which would invalidate the code_challenge
@@ -239,13 +271,17 @@ class GoogleConnectController {
 			$state         = $existing['state'];
 		} else {
 			$code_verifier = $this->generate_code_verifier();
-			$state         = bin2hex( random_bytes( 16 ) );
+			// Prefix the connection onto the state. OAuth round-trips `state` verbatim
+			// (Google → API → callback), so this is the most reliable way to know which
+			// connection initiated the flow, regardless of how the API handles redirect_back.
+			$state = $conn . '_' . bin2hex( random_bytes( 16 ) );
 
 			set_transient(
-				self::TRANSIENT_PREFIX . $user_id,
+				$transient_key,
 				array(
 					'code_verifier' => $code_verifier,
 					'state'         => $state,
+					'conn'          => $conn,
 				),
 				self::TRANSIENT_TTL
 			);
@@ -254,7 +290,14 @@ class GoogleConnectController {
 		$code_challenge = $this->generate_code_challenge( $code_verifier );
 
 		// redirect_back must match the API allowlist: HTTPS + /wp-admin/admin.php prefix.
-		$redirect_back = add_query_arg( 'page', self::PAGE_SLUG, admin_url( 'admin.php' ) );
+		// Include the connection so the callback can target the right slot deterministically.
+		$redirect_back = add_query_arg(
+			array(
+				'page' => self::PAGE_SLUG,
+				'conn' => $conn,
+			),
+			admin_url( 'admin.php' )
+		);
 
 		$api_base = defined( 'SMART_SMTP_API_BASE_URL' ) ? SMART_SMTP_API_BASE_URL : 'https://breeder-antennae-freemason.ngrok-free.dev/smart-smtp';
 
@@ -370,9 +413,9 @@ class GoogleConnectController {
 	 *
 	 * @param array $token_response Decoded JSON response from the Google token endpoint.
 	 */
-	private function save_tokens( array $token_response, string $client_secret = '' ): void {
+	private function save_tokens( array $token_response, string $client_secret = '', string $conn = 'primary' ): void {
 		$prov_ctrl = new ProviderController();
-		$settings  = $prov_ctrl->get_provider_config_by_conn( self::CONN, 'gmail' );
+		$settings  = $prov_ctrl->get_provider_config_by_conn( $conn, 'gmail' );
 
 		// Preserve existing config and update token fields.
 		$settings['providerType']  = 'gmail';
@@ -385,9 +428,7 @@ class GoogleConnectController {
 			$settings['client_secret'] = $client_secret;
 		}
 
-		$prov_ctrl->update_provider_config_by_conn( self::CONN, $settings );
-
-
+		$prov_ctrl->update_provider_config_by_conn( $conn, $settings );
 	}
 
 	// -------------------------------------------------------------------------
@@ -401,9 +442,9 @@ class GoogleConnectController {
 	 *
 	 * @return bool
 	 */
-	private function is_connected(): bool {
+	private function is_connected( string $conn = 'primary' ): bool {
 		$prov_ctrl = new ProviderController();
-		return $prov_ctrl->is_mailer_complete( self::CONN, 'gmail' );
+		return $prov_ctrl->is_mailer_complete( $conn, 'gmail' );
 	}
 
 	/**
@@ -430,15 +471,14 @@ class GoogleConnectController {
 	 * @param string $type    'success' or 'error'.
 	 * @param string $message Human-readable message.
 	 */
-	private function redirect_with_notice( string $type, string $message ): void {
+	private function redirect_with_notice( string $type, string $message, string $conn = 'primary' ): void {
 		set_transient(
 			'smart_smtp_notice_' . get_current_user_id(),
 			array( 'type' => $type, 'message' => $message ),
 			60
 		);
 
-		// Return to the primary connection screen on success (hash-router route).
-		$hash = 'success' === $type ? '#/primary-connection' : '';
+		$hash = 'success' === $type ? '#/' . $conn . '-connection' : '';
 		wp_safe_redirect( admin_url( 'admin.php?page=smart-smtp' ) . $hash );
 		exit;
 	}

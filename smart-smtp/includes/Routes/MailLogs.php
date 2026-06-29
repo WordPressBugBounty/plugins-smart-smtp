@@ -69,6 +69,15 @@ class MailLogs extends AbstractRoutes {
 				'permission_callback' => array( new CommonAuth(), 'check_access_permissions' ),
 			)
 		);
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/resend-mail',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( new MailLogsController(), 'resend_mail' ),
+				'permission_callback' => array( new CommonAuth(), 'check_access_permissions' ),
+			)
+		);
 	}
 
 }

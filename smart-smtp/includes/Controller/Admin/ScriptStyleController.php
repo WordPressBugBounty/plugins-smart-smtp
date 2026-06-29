@@ -201,8 +201,10 @@ class ScriptStyleController {
 					},
 					array()
 				),
-				'googleConnectUrl'   => esc_url( GoogleConnectController::init()->get_connect_url() ),
-				'googleIsConnected'  => ( new ProviderController() )->is_mailer_complete( 'primary', 'gmail' ),
+				'googleConnectUrl'         => esc_url( GoogleConnectController::init()->get_connect_url( 'primary' ) ),
+				'googleFallbackConnectUrl' => esc_url( GoogleConnectController::init()->get_connect_url( 'fallback' ) ),
+				'googleIsConnected'        => ( new ProviderController() )->is_mailer_complete( 'primary', 'gmail' ),
+				'googleFallbackIsConnected' => ( new ProviderController() )->is_mailer_complete( 'fallback', 'gmail' ),
 'googleIsSSL'        => is_ssl(),
 				'themes'             => array(
 					'zakra'    => strpos( $current_theme, 'zakra' ) !== false ? 'active' : (

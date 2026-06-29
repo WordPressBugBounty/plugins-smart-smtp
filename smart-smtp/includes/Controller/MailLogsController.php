@@ -132,11 +132,211 @@ class MailLogsController {
 			)
 		);
 
+		if ( ! empty( $res['result'] ) ) {
+			foreach ( $res['result'] as &$log ) {
+				$paths = array();
+				if ( ! empty( $log['attachments'] ) ) {
+					$paths = array_values( array_filter( array_map( 'trim', explode( ',', $log['attachments'] ) ) ) );
+				}
+				$urls = array();
+				foreach ( $paths as $path ) {
+					$urls[] = array(
+						'name' => basename( $path ),
+						'url'  => $this->attachment_path_to_url( $path ),
+					);
+				}
+				$log['attachment_list'] = $urls;
+			}
+			unset( $log );
+		}
+
 		return new \WP_REST_Response(
 			array(
 				'success' => true,
 				'message' => esc_html__( 'All selected logs deleted successfully!!', 'smart-smtp' ),
 				'data'    => $res,
+			),
+			200
+		);
+	}
+
+	/**
+	 * Convert an absolute file path to a public URL.
+	 *
+	 * @param string $path Absolute file path.
+	 * @return string URL or empty string if not resolvable.
+	 */
+	private function attachment_path_to_url( $path ) {
+		if ( empty( $path ) ) {
+			return '';
+		}
+		$path = wp_normalize_path( $path );
+
+		$upload_dir = wp_upload_dir();
+		$basedir    = wp_normalize_path( $upload_dir['basedir'] );
+		$baseurl    = $upload_dir['baseurl'];
+		if ( '' !== $basedir && 0 === stripos( $path, $basedir ) ) {
+			return $baseurl . substr( $path, strlen( $basedir ) );
+		}
+
+		$abspath = wp_normalize_path( ABSPATH );
+		$siteurl = get_site_url();
+		if ( '' !== $abspath && 0 === stripos( $path, $abspath ) ) {
+			return trailingslashit( $siteurl ) . ltrim( substr( $path, strlen( $abspath ) ), '/' );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Resend an email from a log entry.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param  array $request The request data.
+	 */
+	public function resend_mail( $request ) {
+		$id = isset( $request['id'] ) ? absint( $request['id'] ) : 0;
+
+		if ( ! $id ) {
+			return new \WP_REST_Response(
+				array(
+					'success' => false,
+					'message' => esc_html__( 'Invalid log ID.', 'smart-smtp' ),
+				),
+				200
+			);
+		}
+
+		$res = $this->mail_logs->get_email_logs( array( 'id' => $id ) );
+
+		if ( empty( $res['result'] ) ) {
+			return new \WP_REST_Response(
+				array(
+					'success' => false,
+					'message' => esc_html__( 'Log not found.', 'smart-smtp' ),
+				),
+				200
+			);
+		}
+
+		$log          = $res['result'][0];
+		$status       = intval( $log['status'] );
+		$resent_count = intval( $log['resent_count'] ?? 0 );
+		$to           = sanitize_email( $log['to'] );
+		$subject      = sanitize_text_field( $log['subject'] );
+		$body         = wp_kses_post( $log['body'] );
+
+		// Send via wp_mail(). SmartSMTP overrides wp_mail() so this still routes through
+		// our own engine (primary + fallback). skip_logging stops the wp_mail_succeeded
+		// hook from inserting a duplicate row — we update the existing log row below.
+		$mail_headers = array();
+		if ( $body !== wp_strip_all_tags( $body ) ) {
+			$mail_headers[] = 'Content-Type: text/html; charset=UTF-8';
+		}
+		if ( ! empty( $log['from'] ) ) {
+			$mail_headers[] = 'From: ' . $log['from'];
+		}
+
+		\SmartSMTP\Services\Services::$skip_logging = true;
+		$fallback_before = (int) get_option( 'smart_smtp_fallback_triggered_count', 0 );
+		$sent            = wp_mail( $to, $subject, $body, $mail_headers );
+		$used_fallback   = (int) get_option( 'smart_smtp_fallback_triggered_count', 0 ) > $fallback_before;
+		\SmartSMTP\Services\Services::$skip_logging = false;
+		// Retry success resets count to 0 (no number shown); resend increments it.
+		$new_count = ( 1 === $status ) ? $resent_count + 1 : 0;
+
+		if ( $sent ) {
+			// Case 1 & 2: success — always update same row.
+			$update = array(
+				'status'       => 1,
+				'resent_count' => $new_count,
+				'updated_at'   => current_time( 'mysql' ),
+			);
+			// Sent via primary (no failover) — drop any stale fallback marker so the
+			// row no longer shows the Fallback status.
+			if ( ! $used_fallback ) {
+				$update['primary_id'] = 0;
+			}
+			$this->mail_logs->update_log( $id, $update );
+			return new \WP_REST_Response(
+				array(
+					'success'      => true,
+					'message'      => esc_html__( 'Email resent successfully.', 'smart-smtp' ),
+					'action'       => 'updated',
+					'new_status'   => 1,
+					'resent_count' => $new_count,
+				),
+				200
+			);
+		}
+
+		// Failure path.
+		// Resend of an already-sent log that has been resent more than once: keep a
+		// single linked retry row. Reuse it on further failures instead of spawning a
+		// new row each time.
+		if ( 1 === $status && $resent_count > 1 ) {
+			global $wpdb;
+			$existing_id = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$wpdb->prefix}smart_smtp_mail_logs WHERE primary_id = %d ORDER BY id ASC LIMIT 1",
+					$id
+				)
+			);
+
+			if ( $existing_id ) {
+				// Already have a retry row for this log — just refresh it.
+				$this->mail_logs->update_log(
+					$existing_id,
+					array(
+						'status'        => 0,
+						'error_message' => esc_html__( 'Resend failed.', 'smart-smtp' ),
+						'updated_at'    => current_time( 'mysql' ),
+					)
+				);
+				$new_id = $existing_id;
+			} else {
+				$new_log = array(
+					'to'            => $log['to'],
+					'from'          => $log['from'],
+					'subject'       => $log['subject'],
+					'body'          => $log['body'],
+					'header'        => $log['header'],
+					'attachments'   => $log['attachments'],
+					'status'        => 0,
+					'resent_count'  => 0,
+					'primary_id'    => $id,
+					'error_message' => esc_html__( 'Resend failed.', 'smart-smtp' ),
+					// Omit created_at/updated_at so the DB DEFAULT CURRENT_TIMESTAMP applies,
+					// matching every other log row. Passing current_time('mysql') here uses a
+					// different timezone than the DB default, making the row sort to the bottom.
+				);
+				$new_id = $this->mail_logs->insert_email_logs( $new_log );
+			}
+
+			return new \WP_REST_Response(
+				array(
+					'success' => false,
+					'message' => esc_html__( 'Failed to resend email.', 'smart-smtp' ),
+					'action'  => 'new_row',
+					'new_id'  => $new_id,
+				),
+				200
+			);
+		}
+
+		// Otherwise (retry of a failed log, or resend with count <= 1): update same row.
+		$this->mail_logs->update_log( $id, array(
+			'resent_count' => $new_count,
+			'updated_at'   => current_time( 'mysql' ),
+		) );
+		return new \WP_REST_Response(
+			array(
+				'success'      => false,
+				'message'      => esc_html__( 'Failed to resend email.', 'smart-smtp' ),
+				'action'       => 'updated',
+				'new_status'   => $status,
+				'resent_count' => $new_count,
 			),
 			200
 		);

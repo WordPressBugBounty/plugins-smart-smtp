@@ -62,6 +62,18 @@ class TestMailController {
 			$service       = Services::init();
 			$test_response = $service->send_test_mail( $sanitized_test_data );
 			$response      = Services::$response_message;
+
+			// A mailer may return a WP_Error (e.g. Gmail API failure) instead of an
+			// array/bool. Treat that as a failed send so we never index it as an array.
+			if ( is_wp_error( $test_response ) ) {
+				return new \WP_REST_Response(
+					array(
+						'message' => $test_response->get_error_message(),
+					),
+					400
+				);
+			}
+
 			if ( $test_response ) {
 				return new \WP_REST_Response(
 					array(

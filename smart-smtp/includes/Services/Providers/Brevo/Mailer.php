@@ -245,7 +245,7 @@ class Mailer extends MailerAbstract {
 
 			$ext = pathinfo( $attachment[1], PATHINFO_EXTENSION );
 
-			if ( ! in_array( $ext, $this->allowed_attach_ext, true ) ) {
+			if ( ! in_array( $ext, $this->allowed_attachment_exts, true ) ) {
 				continue;
 			}
 
@@ -426,7 +426,10 @@ class Mailer extends MailerAbstract {
 	protected function process_response( $response ) {
 
 		if ( is_wp_error( $response ) ) {
-			return new \WP_Error( $response->get_error_code(), $response->get_error_message(), $response->get_error_messages() );
+			// Transport-level failure (DNS, timeout, connection refused). Throw so the
+			// caller (BaseMailer) can trigger the fallback connection. Returning a
+			// WP_Error here would be swallowed as a successful send and skip failover.
+			throw new \PHPMailer\PHPMailer\Exception( $response->get_error_message(), (int) $response->get_error_code() );
 		} else {
 			$response_body = wp_remote_retrieve_body( $response );
 			$response_code = wp_remote_retrieve_response_code( $response );
@@ -440,7 +443,8 @@ class Mailer extends MailerAbstract {
 					'code'    => 202,
 				);
 			} else {
-				throw new \PHPMailer\PHPMailer\Exception( $response_body['message'], $response_code );
+				$error_message = isset( $response_body['message'] ) ? $response_body['message'] : esc_html__( 'Brevo API request failed.', 'smart-smtp' );
+				throw new \PHPMailer\PHPMailer\Exception( $error_message, (int) $response_code );
 			}
 		}
 	}

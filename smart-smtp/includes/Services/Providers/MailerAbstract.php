@@ -75,7 +75,50 @@ class MailerAbstract {
 	 *                           This array is passed by reference and can be modified within the method.
 	 * @return void
 	 */
+	/**
+	 * Return the display filename for a PHPMailer attachment element.
+	 *
+	 * @param array $attachment PHPMailer attachment array (index 1 = name).
+	 * @return string
+	 */
+	public function get_attachment_file_name( $attachment ) {
+		return isset( $attachment[1] ) ? (string) $attachment[1] : '';
+	}
+
+	/**
+	 * Return the raw binary content of a PHPMailer attachment element.
+	 *
+	 * PHPMailer stores either a file path (index 4 = false) or an inline
+	 * string (index 4 = true) at index 0. Returns false when the file
+	 * cannot be read so the caller can skip the attachment.
+	 *
+	 * @param array $attachment PHPMailer attachment array.
+	 * @return string|false File contents, or false on failure.
+	 */
+	public function get_attachment_file_content( $attachment ) {
+		$is_string = isset( $attachment[4] ) && $attachment[4];
+
+		if ( $is_string ) {
+			return isset( $attachment[0] ) ? $attachment[0] : false;
+		}
+
+		$path = isset( $attachment[0] ) ? $attachment[0] : '';
+
+		if ( empty( $path ) || ! is_readable( $path ) ) {
+			return false;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		return file_get_contents( $path );
+	}
+
 	public function set_force_from_name_and_email( $mail_config, &$mail_data ) {
+
+		// Ensure headers is an array before indexing it; callers (e.g. resend) may pass
+		// a raw header string, which would otherwise trigger a TypeError on $mail_data['headers']['from'].
+		if ( ! isset( $mail_data['headers'] ) || ! is_array( $mail_data['headers'] ) ) {
+			$mail_data['headers'] = array();
+		}
 
 		if ( isset( $mail_config['smtp_from_name'] ) && ! empty( $mail_config['smtp_from_name'] ) && isset( $mail_config['smtp_from_email_address'] ) && ! empty( $mail_config['smtp_from_email_address'] ) ) {
 			$mail_data['headers']['from'] = sanitize_email( $this->php_mailer->From );

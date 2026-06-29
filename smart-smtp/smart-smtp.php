@@ -3,7 +3,7 @@
  * Plugin Name: SmartSMTP
  * Plugin URI: https://wordpress.org/plugins/smart-smtp
  * Description: Effortlessly send reliable and secure emails through SMTP with the SmartSMTP plugin.
- * Version: 1.1.3
+ * Version: 1.2.0
  * Author: ThemeGrill
  * Author URI: https://themegrill.com/
  * Text Domain: smart-smtp
@@ -41,8 +41,8 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 		'admin_notices',
 		function () {
 			?>
-			 <div class="notice notice-error">
-				 <p>
+			<div class="notice notice-error">
+				<p>
 					<?php
 					printf(
 						/* translators: 1: composer command. 2: plugin directory */
@@ -51,16 +51,16 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 						'<code>' . esc_html( str_replace( ABSPATH, '', __DIR__ ) ) . '</code>'
 					);
 					?>
-				 </p>
-			 </div>
-			 <?php
+				</p>
+			</div>
+			<?php
 		}
 	);
 	return;
 }
 
 // Define SMART_SMTP_VERSION.
- ! defined( 'SMART_SMTP_VERSION' ) && define( 'SMART_SMTP_VERSION', '1.1.2' );
+ ! defined( 'SMART_SMTP_VERSION' ) && define( 'SMART_SMTP_VERSION', '1.2.0' );
 
 // Define SMART_SMTP_PLUGIN_FILE.
  ! defined( 'SMART_SMTP_PLUGIN_FILE' ) && define( 'SMART_SMTP_PLUGIN_FILE', __FILE__ );
@@ -81,7 +81,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
  ! defined( 'SMART_SMTP_ASSETS_URL' ) && define( 'SMART_SMTP_ASSETS_URL', SMART_SMTP_URL . 'assets' );
 
 // ThemeGrill API base URL for the Smart SMTP OAuth relay.
-! defined( 'SMART_SMTP_API_BASE_URL' ) && define( 'SMART_SMTP_API_BASE_URL', 'https://api.themegrill.com/smart-smtp' );
+ ! defined( 'SMART_SMTP_API_BASE_URL' ) && define( 'SMART_SMTP_API_BASE_URL', 'https://api.themegrill.com/smart-smtp' );
 
 /**
  * Initialization of SmartSMTP instance.

@@ -98,7 +98,10 @@ class Mailer extends MailerAbstract {
 		$googleMessage = new \Google_Service_Gmail_Message();
 		$googleMessage->setRaw( $encoded_message );
 
-		$gmail  = new GmailSettings( $mail_config );
+		// Pass the connection so GmailSettings can persist refreshed tokens to the
+		// correct slot. Without it, get_client() refreshes on expiry but writes to an
+		// empty connection (no-op), silently degrading the connection after ~1 hour.
+		$gmail  = new GmailSettings( array_merge( $mail_config, array( 'conn' => $this->conn ) ) );
 		$client = $gmail->get_client();
 
 		// Prepare the Gmail service.
@@ -108,13 +111,21 @@ class Mailer extends MailerAbstract {
 			$message = $service->users_messages->send( 'me', $googleMessage );
 
 			return $message->getId();
-		} catch ( Exception $e ) {
+		} catch ( \Throwable $e ) {
+			// Google exceptions carry a raw JSON blob as the message. Map to a short,
+			// human-readable message instead of dumping the full error payload. Returning
+			// a WP_Error (rather than throwing) is fine — BaseMailer treats a WP_Error
+			// result from the primary as a failure and triggers the fallback connection.
+			$code = (int) $e->getCode();
 
-			$error_msg = $e->getMessage();
-			return new \WP_Error( 422, $error_msg, array() );
+			if ( 401 === $code || 403 === $code ) {
+				$friendly = esc_html__( 'Gmail authentication failed. Please reconnect your Google account.', 'smart-smtp' );
+			} else {
+				$friendly = esc_html__( 'Could not send the email through Gmail. Please try again.', 'smart-smtp' );
+			}
+
+			return new \WP_Error( 422, $friendly, array() );
 		}
-
-		return false;
 	}
 
 

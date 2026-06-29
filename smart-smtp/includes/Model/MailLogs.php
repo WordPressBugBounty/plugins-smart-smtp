@@ -72,17 +72,19 @@ class MailLogs {
 			$values        = array();
 			$query_cond    = '';
 
-			if ( isset( $search_params['searchByItem'] ) ) {
+			if ( isset( $search_params['searchByItem'] ) && '' !== $search_params['searchByItem'] ) {
 				$search_by_item = '%' . $this->con->esc_like( $search_params['searchByItem'] ) . '%';
-				$where[]        = '`to` LIKE %s';
+				$where[]        = '(`to` LIKE %s OR `from` LIKE %s OR `subject` LIKE %s OR `body` LIKE %s)';
+				$values[]       = $search_by_item;
+				$values[]       = $search_by_item;
+				$values[]       = $search_by_item;
 				$values[]       = $search_by_item;
 			}
 
 			if ( isset( $search_params['searchByDate'] ) && ! empty( $search_params['searchByDate'] ) ) {
-				$date = new \DateTime( $search_params['searchByDate'] );
-				$date->modify( '+1 day' );
-				$start_of_day = $date->setTime( 0, 0, 0 )->format( 'Y-m-d H:i:s' );
-				$end_of_day   = $date->setTime( 23, 59, 59 )->format( 'Y-m-d H:i:s' );
+				$date         = new \DateTime( $search_params['searchByDate'] );
+				$start_of_day = ( clone $date )->setTime( 0, 0, 0 )->format( 'Y-m-d H:i:s' );
+				$end_of_day   = ( clone $date )->setTime( 23, 59, 59 )->format( 'Y-m-d H:i:s' );
 				$where[]      = '`created_at` BETWEEN %s AND %s';
 				$values[]     = $start_of_day;
 				$values[]     = $end_of_day;
@@ -101,7 +103,9 @@ class MailLogs {
 
 			$query = $query . $query_cond;
 
-			$query = $this->con->prepare( $query, $values );
+			if ( ! empty( $values ) ) {
+				$query = $this->con->prepare( $query, ...$values );
+			}
 
 			$order_by_columns = array();
 			if ( isset( $search_params['orderByCreatedAt'] ) ) {
@@ -211,6 +215,20 @@ class MailLogs {
 		);
 
 		return $res;
+	}
+
+	/**
+	 * Update a mail log row.
+	 *
+	 * @param int   $id   Row ID.
+	 * @param array $data Columns to update.
+	 */
+	public function update_log( $id, $data ) {
+		return $this->con->update(
+			$this->con->prefix . 'smart_smtp_mail_logs',
+			$data,
+			array( 'id' => absint( $id ) )
+		);
 	}
 
 	/**

@@ -562,8 +562,26 @@ class ProviderController {
 					$settings['access_token']  = '';
 					$settings['auth_token']    = '';
 					$settings['refresh_token'] = '';
+					$settings['client_id']     = '';
+					$settings['client_secret'] = '';
+
+					// If gmail is the active provider for THIS connection, deactivate it.
+					// `smtp_is_active` is derived (provider_type === active_provider_type),
+					// not a stored flag — so we must clear the per-connection active provider
+					// option. Done per-conn, so primary and fallback deactivate separately.
+					if ( 'gmail' === $this->provider->get_provider_type( $conn ) ) {
+						$this->set_active_provider_by_conn( $conn, $provider_type, false );
+					}
 
 					$res = $this->update_provider_config_by_conn( $conn, $settings );
+
+					$test_mail        = new \SmartSMTP\Model\TestMail();
+					$test_mail_config = $test_mail->get_test_mail_config();
+					if ( isset( $test_mail_config['smtp_test_connection'] ) && $test_mail_config['smtp_test_connection'] === $conn ) {
+						$test_mail_config['smtp_test_connection'] = '';
+						$test_mail->update_test_mail_config( $test_mail_config );
+					}
+
 					return new \WP_REST_Response(
 						array(
 							'message' => esc_html__( 'Authentication removed successfully!!', 'smart-smtp' ),

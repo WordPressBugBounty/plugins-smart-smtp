@@ -33,6 +33,19 @@ class Services {
 	public static $response_message = array();
 
 	/**
+	 * Cached parsed header info captured from wp_mail filter before any SMTP plugin processes it.
+	 *
+	 * @var array|null
+	 */
+	public static $cached_header_info = null;
+
+	/** When true, smtp_email_logs skips inserting a new row (used during resend). */
+	public static $skip_logging = false;
+
+	/** Recursion guard — true while our own dispatch is sending. */
+	public static $sending = false;
+
+	/**
 	 * Services class constructor.
 	 *
 	 * @since 1.0.0
@@ -40,6 +53,94 @@ class Services {
 	protected function __construct() {
 		add_action( 'wp_mail_failed', array( $this, 'on_email_failed' ) );
 		add_action( 'wp_mail_succeeded', array( $this, 'smtp_email_logs' ) );
+		add_filter( 'wp_mail', array( $this, 'capture_headers_early' ), 1 );
+		// Win conflicts with other SMTP plugins (e.g. Fluent SMTP) that own wp_mail():
+		// their wp_mail() fires the pre_wp_mail filter, so we hijack it and send through
+		// Smart SMTP (primary + fallback) instead. Works for WP core wp_mail() too.
+		add_filter( 'pre_wp_mail', array( $this, 'maybe_take_over' ), 1, 2 );
+	}
+
+	/**
+	 * Take over sending when another plugin's (or core's) wp_mail() runs.
+	 *
+	 * @param null|bool $return The short-circuit value.
+	 * @param array     $atts   wp_mail() arguments.
+	 * @return null|bool Null to let the caller proceed, or a bool send result.
+	 */
+	public function maybe_take_over( $return, $atts ) {
+		// Already handled by something else, or our own dispatch is in progress.
+		if ( null !== $return || self::$sending ) {
+			return $return;
+		}
+
+		$to          = isset( $atts['to'] ) ? $atts['to'] : '';
+		$subject     = isset( $atts['subject'] ) ? $atts['subject'] : '';
+		$message     = isset( $atts['message'] ) ? $atts['message'] : '';
+		$headers     = isset( $atts['headers'] ) ? $atts['headers'] : '';
+		$attachments = isset( $atts['attachments'] ) ? $atts['attachments'] : array();
+
+		return self::smart_smtp_mail( $to, $subject, $message, $headers, $attachments );
+	}
+
+	/**
+	 * Capture original headers before any SMTP plugin processes them.
+	 *
+	 * @param array $atts wp_mail arguments.
+	 * @return array
+	 */
+	public function capture_headers_early( $atts ) {
+		$raw = isset( $atts['headers'] ) ? $atts['headers'] : '';
+
+		if ( is_string( $raw ) ) {
+			// If headers is a JSON string, decode and use associatively.
+			$json = json_decode( $raw, true );
+			if ( JSON_ERROR_NONE === json_last_error() && is_array( $json ) ) {
+				$lines = $json;
+			} else {
+				$lines = array_filter( array_map( 'trim', explode( "\n", str_replace( "\r\n", "\n", $raw ) ) ) );
+			}
+		} elseif ( is_array( $raw ) ) {
+			$lines = $raw;
+		} else {
+			$lines = array();
+		}
+
+		$info = array(
+			'content-type' => '',
+			'reply-to'     => array(),
+			'cc'           => array(),
+			'bcc'          => array(),
+		);
+
+		foreach ( $lines as $hkey => $hval ) {
+			if ( is_string( $hkey ) ) {
+				$hname    = strtolower( trim( $hkey ) );
+				$hcontent = trim( (string) $hval );
+			} elseif ( is_string( $hval ) && strpos( $hval, ':' ) !== false ) {
+				list( $hname, $hcontent ) = explode( ':', $hval, 2 );
+				$hname    = strtolower( trim( $hname ) );
+				$hcontent = trim( $hcontent );
+			} else {
+				continue;
+			}
+			switch ( $hname ) {
+				case 'content-type':
+					$info['content-type'] = strtok( $hcontent, ';' );
+					break;
+				case 'reply-to':
+					$info['reply-to'][] = array( 'email' => $hcontent );
+					break;
+				case 'cc':
+					$info['cc'][] = $hcontent;
+					break;
+				case 'bcc':
+					$info['bcc'][] = $hcontent;
+					break;
+			}
+		}
+
+		self::$cached_header_info = $info;
+		return $atts;
 	}
 
 	/**
@@ -54,6 +155,26 @@ class Services {
 	 * @param  array  $attachments The attachment of email.
 	 */
 	public static function smart_smtp_mail( $to, $subject, $message, $headers, $attachments ) {
+		// Guard so our pre_wp_mail takeover filter does not re-enter while we send.
+		self::$sending = true;
+		try {
+			return self::dispatch_mail( $to, $subject, $message, $headers, $attachments );
+		} finally {
+			self::$sending = false;
+		}
+	}
+
+	/**
+	 * Actual mail dispatch through Smart SMTP (primary + fallback).
+	 *
+	 * @param mixed  $to          Recipient(s).
+	 * @param string $subject     Subject.
+	 * @param string $message     Body.
+	 * @param mixed  $headers     Headers.
+	 * @param mixed  $attachments Attachments.
+	 * @return bool
+	 */
+	private static function dispatch_mail( $to, $subject, $message, $headers, $attachments ) {
 		// Compact the input, apply the filters, and extract them back out.
 
 		/**
@@ -129,6 +250,11 @@ class Services {
 		if ( ! is_array( $attachments ) ) {
 			$attachments = explode( "\n", str_replace( "\r\n", "\n", $attachments ) );
 		}
+
+		// De-duplicate: the wp_mail filter fires here AND earlier in WP core's
+		// wp_mail(), so any filter that appends an attachment path would add it
+		// twice. array_unique keeps only distinct paths; array_values resets keys.
+		$attachments = array_values( array_unique( array_filter( $attachments ) ) );
 
 		global $phpmailer;
 
@@ -402,6 +528,12 @@ class Services {
 		do_action_ref_array( 'phpmailer_init', array( &$phpmailer ) );
 
 		$mail_data = compact( 'to', 'subject', 'message', 'headers', 'attachments' );
+		$mail_data['_header_info'] = array(
+			'content-type' => isset( $content_type ) && ! empty( $content_type ) ? $content_type : $phpmailer->ContentType,
+			'reply-to'     => $reply_to,
+			'cc'           => $cc,
+			'bcc'          => $bcc,
+		);
 
 		try {
 			$basemailer = new BaseMailer( $phpmailer );
@@ -413,7 +545,7 @@ class Services {
 
 			return true;
 
-		} catch ( \PHPMailer\PHPMailer\Exception $e ) {
+		} catch ( \Throwable $e ) {
 
 			$mail_data['phpmailer_exception_code'] = $e->getCode();
 
@@ -460,17 +592,23 @@ class Services {
 		if ( isset( $test_config['smtp_test_html'] ) && true === $test_config['smtp_test_html'] ) {
 			ob_start();
 			?>
-			<div class="smart-mail-email-body" style="padding: 100px 0; background-color: #ebebeb;">
-				<table class="smart-mail-email" border="0" cellpadding="0" cellspacing="0" style="width: 40%; margin: 0 auto; background: #ffffff; padding: 30px 30px 26px; border: 0.4px solid #d3d3d3; border-radius: 11px; font-family: 'Segoe UI', sans-serif; ">
-					<tbody>
-						<tr>
-							<td colspan="2" style="text-align: left; padding:10px">
-					<?php echo wp_kses_post( $message ); ?>
-							</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
+			<table class="smart-mail-email-body" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ebebeb" style="background-color: #ebebeb;">
+				<tbody>
+					<tr>
+						<td align="center" style="padding: 20px 0;">
+							<table class="smart-mail-email" border="0" cellpadding="0" cellspacing="0" align="center" width="600" bgcolor="#ffffff" style="width: 600px; max-width: 90%; margin: 0 auto; background: #ffffff; border: 0; border-radius: 11px; border-collapse: separate;">
+								<tbody>
+									<tr>
+										<td style="text-align: left; padding: 40px 40px 36px; font-family: Arial, sans-serif;">
+								<?php echo wp_kses_post( $message ); ?>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
 			<?php
 			$message = wp_kses_post( ob_get_clean() );
 			$headers = array( 'Content-Type: text/html; charset=UTF-8' );
@@ -516,6 +654,9 @@ class Services {
 	 * @param  [type] $logs The email logs.
 	 */
 	public function smtp_email_logs( $logs ) {
+		if ( self::$skip_logging ) {
+			return;
+		}
 		$email_logs = $this->format_log_data( $logs );
 
 		$email_log_model = new MailLogs();
@@ -558,23 +699,95 @@ class Services {
 						$email_logs['to'] = is_array( $logs['to'] ) ? implode( ', ', $logs['to'] ) : $logs['to'];
 						break;
 					case 'headers':
-						$headers              = is_array( $logs['headers'] ) ? implode( ',', $logs['headers'] ) : '';
-						$email_logs['header'] = $headers;
+						$raw_headers = is_array( $logs['headers'] ) ? $logs['headers'] : array();
 
-						$headers = is_array( $logs['headers'] ) ? $logs['headers'] : explode( ',', $logs['headers'] );
-
-						if ( is_array( $headers ) ) {
-							foreach ( $headers as $key => $header ) {
-								if ( 'from' === strtolower( $key ) ) {
-									$email_logs['from'] = $header;
-									break;
-								}
-								if ( is_string( $header ) && strpos( $header, 'From:' ) === 0 ) {
-									$email_logs['from'] = trim( str_replace( 'From:', '', $header ) );
-									break;
-								}
+						// Extract from for dedicated field.
+						foreach ( $raw_headers as $key => $header ) {
+							if ( 'from' === strtolower( $key ) ) {
+								$email_logs['from'] = $header;
+								break;
+							}
+							if ( is_string( $header ) && strpos( $header, 'From:' ) === 0 ) {
+								$email_logs['from'] = trim( str_replace( 'From:', '', $header ) );
+								break;
 							}
 						}
+
+						// Build JSON header for display.
+						$header_data = array();
+						if ( isset( $logs['_header_info'] ) ) {
+							// smart_smtp_mail ran — use pre-parsed header info.
+							$info = $logs['_header_info'];
+							if ( ! empty( $info['content-type'] ) ) {
+								$header_data['content-type'] = $info['content-type'];
+							}
+							if ( ! empty( $info['reply-to'] ) ) {
+								$header_data['reply-to'] = array_values( array_map( function( $e ) {
+									return array( 'email' => trim( $e ) );
+								}, (array) $info['reply-to'] ) );
+							}
+							$header_data['cc']  = ! empty( $info['cc'] ) ? array_values( (array) $info['cc'] ) : array();
+							$header_data['bcc'] = ! empty( $info['bcc'] ) ? array_values( (array) $info['bcc'] ) : array();
+						} else {
+							// Another plugin owns wp_mail — parse headers (both indexed strings and associative).
+							$parsed = array(
+								'content-type' => '',
+								'reply-to'     => array(),
+								'cc'           => array(),
+								'bcc'          => array(),
+							);
+							foreach ( $raw_headers as $hkey => $hval ) {
+								if ( is_string( $hkey ) ) {
+									// Associative: key = header name, value = header content.
+									$hname    = strtolower( trim( $hkey ) );
+									$hcontent = trim( (string) $hval );
+								} elseif ( is_string( $hval ) && strpos( $hval, ':' ) !== false ) {
+									// Indexed: "Header-Name: value" string.
+									list( $hname, $hcontent ) = explode( ':', $hval, 2 );
+									$hname    = strtolower( trim( $hname ) );
+									$hcontent = trim( $hcontent );
+								} else {
+									continue;
+								}
+								switch ( $hname ) {
+									case 'content-type':
+										$parsed['content-type'] = strtok( $hcontent, ';' );
+										break;
+									case 'reply-to':
+										$parsed['reply-to'][] = array( 'email' => $hcontent );
+										break;
+									case 'cc':
+										$parsed['cc'][] = $hcontent;
+										break;
+									case 'bcc':
+										$parsed['bcc'][] = $hcontent;
+										break;
+								}
+							}
+							// If raw headers were empty (e.g. Fluent SMTP consumed them), fall back to filter-captured info.
+							if ( empty( $parsed['content-type'] ) && empty( $parsed['reply-to'] ) && empty( $parsed['cc'] ) && empty( $parsed['bcc'] ) && ! is_null( self::$cached_header_info ) ) {
+								$parsed = self::$cached_header_info;
+							}
+
+							if ( ! empty( $parsed['content-type'] ) ) {
+								$header_data['content-type'] = $parsed['content-type'];
+							}
+							if ( ! empty( $parsed['reply-to'] ) ) {
+								$header_data['reply-to'] = $parsed['reply-to'];
+							}
+							$header_data['cc']  = ! empty( $parsed['cc'] ) ? $parsed['cc'] : array();
+							$header_data['bcc'] = ! empty( $parsed['bcc'] ) ? $parsed['bcc'] : array();
+						}
+						// Merge remaining non-standard custom headers (associative keys only).
+						// Only allow valid HTTP header names (letters, digits, hyphens) to prevent
+						// JSON-encoded strings passed as headers from leaking in as keys.
+						foreach ( $raw_headers as $k => $v ) {
+							if ( is_string( $k ) && is_string( $v ) && 'from' !== strtolower( $k ) && ! isset( $header_data[ $k ] ) && preg_match( '/^[A-Za-z][A-Za-z0-9\-]*$/', $k ) ) {
+								$header_data[ $k ] = $v;
+							}
+						}
+						$email_logs['header'] = ! empty( $header_data ) ? wp_json_encode( $header_data ) : '';
+						self::$cached_header_info = null;
 						break;
 					case 'subject':
 						$email_logs['subject'] = $logs['subject'];
@@ -603,6 +816,9 @@ class Services {
 	 * @param  [array] $wp_error The error data.
 	 */
 	public function on_email_failed( $wp_error ) {
+		if ( self::$skip_logging ) {
+			return;
+		}
 		if ( ! is_wp_error( $wp_error ) ) {
 			return;
 		}

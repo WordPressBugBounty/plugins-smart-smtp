@@ -59,7 +59,7 @@ class MenusController {
 	 */
 	public function smtp_page() {
 		wp_enqueue_style( 'emsmtp-main' );
-		echo '<div id="smart-smtp"></div>';
+		echo '<div id="smart-smtp" class="smart-smtp"></div>';
 	}
 
 	/**

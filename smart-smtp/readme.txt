@@ -3,7 +3,7 @@ Contributors: ThemeGrill
 Tags: SMTP, email, SMTP plugin, WP Mail, mail delivery
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 1.1.3
+Stable tag: 1.2.0
 Requires PHP: 7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -101,7 +101,20 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Changelog ==
 
-= 1.1.3   - xx-xx-2026 =
+= 1.2.0   - 29-06-2026 =
+
+* Feature - Added Resend/Retry button to email logs.
+* Enhance - Improved email logs.
+* Enhance - Improved control design.
+* Tweak   - Added attachments in mail log.
+* Tweak   - Added an admin notice when email failures occur continuously.
+* Tweak   - Added an admin notice when the fallback connection is triggered.
+* Tweak   - Allow sending test emails even when no connection is configured.
+* Fix     - Resolved toggle flickering issues.
+* Fix     - Fixed Gmail OAuth issues in fallback connections.
+* Fix     - Resolved conflicts with Gravity Forms submissions.
+
+= 1.1.3   - 16-06-2026 =
 * Feature - One-Click Gmail setup via OAuth; no manual SMTP credentials required.
 
 = 1.1.2   - 11-07-2025 =
