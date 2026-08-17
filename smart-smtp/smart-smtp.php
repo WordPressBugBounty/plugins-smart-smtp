@@ -3,7 +3,7 @@
  * Plugin Name: SmartSMTP
  * Plugin URI: https://wordpress.org/plugins/smart-smtp
  * Description: Effortlessly send reliable and secure emails through SMTP with the SmartSMTP plugin.
- * Version: 1.2.0
+ * Version: 1.2.1
  * Author: ThemeGrill
  * Author URI: https://themegrill.com/
  * Text Domain: smart-smtp
@@ -60,7 +60,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 }
 
 // Define SMART_SMTP_VERSION.
- ! defined( 'SMART_SMTP_VERSION' ) && define( 'SMART_SMTP_VERSION', '1.2.0' );
+ ! defined( 'SMART_SMTP_VERSION' ) && define( 'SMART_SMTP_VERSION', '1.2.1' );
 
 // Define SMART_SMTP_PLUGIN_FILE.
  ! defined( 'SMART_SMTP_PLUGIN_FILE' ) && define( 'SMART_SMTP_PLUGIN_FILE', __FILE__ );

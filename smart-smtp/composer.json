@@ -2,7 +2,7 @@
   "name": "smart-smtp/smart-smtp",
   "description": "Effortlessly send reliable and secure emails through SMTP with the SmartSMTP plugin.",
   "type": "wordpress-plugin",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "autoload": {
     "psr-4": {
       "SmartSMTP\\": "includes/"

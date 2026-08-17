@@ -87,6 +87,30 @@ class ScriptStyleController {
 	}
 
 	/**
+	 * Get the build version for a bundled asset.
+	 *
+	 * Uses the content hash webpack writes into the asset's *.asset.php file so the
+	 * enqueued URL changes on every build (busting the browser cache when the code
+	 * changes without a plugin version bump). Falls back to SMART_SMTP_VERSION.
+	 *
+	 * @since 1.2.1
+	 * @param string $asset_filename The *.asset.php filename (e.g. main.asset.php).
+	 * @return string
+	 */
+	public static function get_asset_version( $asset_filename ) {
+		$asset_path = plugin_dir_path( SMART_SMTP_PLUGIN_FILE ) . 'dist/' . $asset_filename;
+
+		if ( file_exists( $asset_path ) ) {
+			$asset = include $asset_path;
+			if ( is_array( $asset ) && ! empty( $asset['version'] ) ) {
+				return $asset['version'];
+			}
+		}
+
+		return SMART_SMTP_VERSION;
+	}
+
+	/**
 	 * After WP init.
 	 *
 	 * @since 1.0.0
@@ -94,18 +118,20 @@ class ScriptStyleController {
 	 */
 	public function after_wp_init() {
 
+		$asset_version = self::get_asset_version( 'main.asset.php' );
+
 		$this->scripts = array(
 			'main' => array(
 				'src'     => self::get_asset_url( 'main.js' ),
 				'deps'    => array( 'wp-element', 'react', 'react-dom', 'wp-api-fetch', 'wp-i18n', 'wp-blocks' ),
-				'version' => SMART_SMTP_VERSION,
+				'version' => $asset_version,
 			),
 		);
 
 		$this->styles = array(
 			'main' => array(
 				'src'     => self::get_asset_url( 'main.css' ),
-				'version' => SMART_SMTP_VERSION,
+				'version' => $asset_version,
 				'deps'    => array(),
 			),
 		);

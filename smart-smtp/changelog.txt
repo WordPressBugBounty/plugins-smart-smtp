@@ -1,6 +1,9 @@
 
 == Changelog ==
 
+= 1.2.1   - 17-08-2026 =
+* Fix     - Mail Logs viewer with server-side sanitization and sandboxed iframe rendering.
+
 = 1.2.0   - 29-06-2026 =
 
 * Feature - Added Resend/Retry button to email logs.

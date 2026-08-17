@@ -62,6 +62,7 @@ class MailLogsController {
 				'search_query' => $search_query,
 			)
 		);
+		$res = $this->sanitize_log_bodies( $res );
 		return new \WP_REST_Response(
 			array(
 				'success' => true,
@@ -131,6 +132,7 @@ class MailLogsController {
 				'id' => $id,
 			)
 		);
+		$res = $this->sanitize_log_bodies( $res );
 
 		if ( ! empty( $res['result'] ) ) {
 			foreach ( $res['result'] as &$log ) {
@@ -158,6 +160,42 @@ class MailLogsController {
 			),
 			200
 		);
+	}
+
+	/**
+	 * Sanitize the stored email body of each log row before it is returned to the admin UI.
+	 *
+	 * The body is stored verbatim so the log stays a faithful record of the email that was sent,
+	 * but the Mail Logs viewer renders it as HTML. We strip <script>, <iframe>, srcdoc, on* event
+	 * handlers and javascript: URIs (preventing stored XSS) while preserving legitimate email
+	 * formatting. Logged emails are frequently full HTML documents whose <head><style> block
+	 * carries the layout, so <style> is explicitly allowed: wp_kses_post() would drop the <style>
+	 * element but keep its CSS as visible text, breaking the rendered email.
+	 *
+	 * @since 1.2.1
+	 *
+	 * @param array $res Result set from MailLogs::get_email_logs().
+	 * @return array The result set with each row's body sanitized for output.
+	 */
+	private function sanitize_log_bodies( $res ) {
+		if ( empty( $res['result'] ) || ! is_array( $res['result'] ) ) {
+			return $res;
+		}
+
+		$allowed          = wp_kses_allowed_html( 'post' );
+		$allowed['style'] = array(
+			'type'  => true,
+			'media' => true,
+		);
+
+		foreach ( $res['result'] as &$log ) {
+			if ( isset( $log['body'] ) && is_string( $log['body'] ) ) {
+				$log['body'] = wp_kses( $log['body'], $allowed );
+			}
+		}
+		unset( $log );
+
+		return $res;
 	}
 
 	/**
