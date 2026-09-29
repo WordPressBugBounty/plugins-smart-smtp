@@ -3,7 +3,7 @@ Contributors: ThemeGrill
 Tags: SMTP, email, SMTP plugin, WP Mail, mail delivery
 Requires at least: 5.0
 Tested up to: 7.0.4
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 Requires PHP: 7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -100,6 +100,12 @@ Yes! SmartSMTP allows you to send emails from your domain (e.g., contact@yourweb
 You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team help validate, triage and handle any security vulnerabilities. [Report a security vulnerability.](https://patchstack.com/database/vdp/31399e61-83a6-4c42-9ebf-dee583d5b114)
 
 == Changelog ==
+
+= 1.2.2   - 29-09-2026 =
+* Fix     - Gmail one-click connection tokens not refreshing.
+* Fix     - Failed emails logged as Sent and reported as successful.
+* Fix     - Provider activation failing silently.
+* Fix     - Resend from Mail Logs stripping the email's HTML head.
 
 = 1.2.1   - 17-08-2026 =
 * Fix     - Mail Logs viewer with server-side sanitization and sandboxed iframe rendering.

@@ -62,7 +62,7 @@ class MailLogs {
 	 * @param  array $param The the extra param to control the query.
 	 */
 	public function get_email_logs( $param = array() ) {
-		$query = $this->con->prepare( "SELECT * FROM {$this->con->prefix}smart_smtp_mail_logs" );
+		$query = "SELECT * FROM {$this->con->prefix}smart_smtp_mail_logs";
 		if ( isset( $param['id'] ) ) {
 			$id     = absint( $param['id'] );
 			$query .= $this->con->prepare( ' WHERE ID = %d', $id );

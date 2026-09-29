@@ -140,7 +140,11 @@ class GmailSettings {
 	 */
 	public function get_client( $is_ajax = false ) {
 
-		$client_id     = trim( (string) $this->client_id );
+		// Connections made before client_id started being persisted have none
+		// stored. If a shared client_id is configured (SMART_SMTP_GOOGLE_CLIENT_ID,
+		// same pattern as the secret below), fall back to it rather than
+		// sending an empty client_id and failing the refresh forever.
+		$client_id     = trim( (string) ( ! empty( $this->client_id ) ? $this->client_id : ( defined( 'SMART_SMTP_GOOGLE_CLIENT_ID' ) ? constant( 'SMART_SMTP_GOOGLE_CLIENT_ID' ) : '' ) ) );
 		$client_secret = trim( (string) ( ! empty( $this->client_secret ) ? $this->client_secret : ( defined( 'SMART_SMTP_GOOGLE_CLIENT_SECRET' ) ? constant( 'SMART_SMTP_GOOGLE_CLIENT_SECRET' ) : '' ) ) );
 
 		$client = new \Google_Client();
@@ -168,25 +172,21 @@ class GmailSettings {
 		if ( $this->is_pkce_one_click_token() ) {
 			$token_data = json_decode( $this->access_token, true );
 
-			// Ensure google/apiclient knows when the token was issued so it
-			// can calculate expiry correctly.
-			if ( is_array( $token_data ) && ! isset( $token_data['created'] ) ) {
-				$token_data['created'] = time();
-			}
-
 			// Check expiry without touching the library's credential stack.
+			// No 'created' means we've never recorded issue time — treat as
+			// expired instead of stamping "now" and looking perpetually fresh.
 			$is_expired = false;
 			if ( is_array( $token_data ) ) {
 				$created    = isset( $token_data['created'] ) ? (int) $token_data['created'] : 0;
 				$expires_in = isset( $token_data['expires_in'] ) ? (int) $token_data['expires_in'] : 0;
-				if ( $created && $expires_in ) {
-					// 30-second buffer to account for clock skew.
-					$is_expired = ( $created + $expires_in - 30 ) < time();
-				}
+				// A missing created or expires_in means we can't compute a real
+				// expiry, so treat it as expired rather than skipping the check.
+				// 30-second buffer to account for clock skew.
+				$is_expired = ( 0 === $created ) || ( 0 === $expires_in ) || ( ( $created + $expires_in - 30 ) < time() );
 			}
 
 			if ( $is_expired && ! empty( $this->refresh_token ) ) {
-				$refreshed = $this->pkce_refresh_token( $client_id, $this->refresh_token );
+				$refreshed = $this->pkce_refresh_token( $client_id, $client_secret, $this->refresh_token );
 
 				if ( empty( $refreshed['error'] ) ) {
 					if ( ! isset( $refreshed['created'] ) ) {
@@ -200,6 +200,13 @@ class GmailSettings {
 					$prov_ctrlr->update_provider_config_by_conn( $this->conn, $settings );
 
 					$token_data = $refreshed;
+
+					// A working refresh means the connection is healthy again.
+					delete_option( 'smart_smtp_gmail_reconnect_required_' . $this->conn );
+				} else {
+					// The mailer's catch block checks this to show a clear
+					// "please reconnect" message instead of a generic one.
+					update_option( 'smart_smtp_gmail_reconnect_required_' . $this->conn, 1, false );
 				}
 			}
 
@@ -262,27 +269,38 @@ class GmailSettings {
 	}
 
 	/**
-	 * Refresh an access token for a PKCE / public client (no client_secret).
+	 * Refresh an access token directly against Google's token endpoint.
 	 *
 	 * The google/apiclient library cannot handle this case because it strips
 	 * empty values with array_filter() before passing creds to UserRefreshCredentials.
 	 * This method calls Google's token endpoint directly via wp_remote_post.
 	 *
-	 * @param string $client_id    The OAuth client ID.
+	 * The OAuth client used here is a confidential "Web application" type —
+	 * exchange_code() already sends client_secret on the initial exchange —
+	 * so the refresh grant needs it too, or Google rejects the request.
+	 *
+	 * @param string $client_id     The OAuth client ID.
+	 * @param string $client_secret The OAuth client secret.
 	 * @param string $refresh_token The refresh token.
 	 * @return array Token array on success, array with 'error' key on failure.
 	 */
-	private function pkce_refresh_token( string $client_id, string $refresh_token ): array {
+	private function pkce_refresh_token( string $client_id, string $client_secret, string $refresh_token ): array {
+		$body = array(
+			'client_id'     => $client_id,
+			'refresh_token' => $refresh_token,
+			'grant_type'    => 'refresh_token',
+		);
+
+		if ( ! empty( $client_secret ) ) {
+			$body['client_secret'] = $client_secret;
+		}
+
 		$response = wp_remote_post(
 			'https://oauth2.googleapis.com/token',
 			array(
 				'timeout' => 15,
 				'headers' => array( 'Content-Type' => 'application/x-www-form-urlencoded' ),
-				'body'    => array(
-					'client_id'     => $client_id,
-					'refresh_token' => $refresh_token,
-					'grant_type'    => 'refresh_token',
-				),
+				'body'    => $body,
 			)
 		);
 

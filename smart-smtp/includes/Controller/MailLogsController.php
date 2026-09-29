@@ -263,7 +263,10 @@ class MailLogsController {
 		$resent_count = intval( $log['resent_count'] ?? 0 );
 		$to           = sanitize_email( $log['to'] );
 		$subject      = sanitize_text_field( $log['subject'] );
-		$body         = wp_kses_post( $log['body'] );
+		// The log is our own record of what this site already sent — resend it
+		// verbatim. wp_kses_post() is a display sanitizer for the log viewer and
+		// strips the <head>/<style> wrapper a full HTML email needs.
+		$body = $log['body'];
 
 		// Send via wp_mail(). SmartSMTP overrides wp_mail() so this still routes through
 		// our own engine (primary + fallback). skip_logging stops the wp_mail_succeeded
@@ -277,9 +280,9 @@ class MailLogsController {
 		}
 
 		\SmartSMTP\Services\Services::$skip_logging = true;
-		$fallback_before = (int) get_option( 'smart_smtp_fallback_triggered_count', 0 );
-		$sent            = wp_mail( $to, $subject, $body, $mail_headers );
-		$used_fallback   = (int) get_option( 'smart_smtp_fallback_triggered_count', 0 ) > $fallback_before;
+		$fallback_before                            = (int) get_option( 'smart_smtp_fallback_triggered_count', 0 );
+		$sent                                       = wp_mail( $to, $subject, $body, $mail_headers );
+		$used_fallback                              = (int) get_option( 'smart_smtp_fallback_triggered_count', 0 ) > $fallback_before;
 		\SmartSMTP\Services\Services::$skip_logging = false;
 		// Retry success resets count to 0 (no number shown); resend increments it.
 		$new_count = ( 1 === $status ) ? $resent_count + 1 : 0;
@@ -364,10 +367,13 @@ class MailLogsController {
 		}
 
 		// Otherwise (retry of a failed log, or resend with count <= 1): update same row.
-		$this->mail_logs->update_log( $id, array(
-			'resent_count' => $new_count,
-			'updated_at'   => current_time( 'mysql' ),
-		) );
+		$this->mail_logs->update_log(
+			$id,
+			array(
+				'resent_count' => $new_count,
+				'updated_at'   => current_time( 'mysql' ),
+			)
+		);
 		return new \WP_REST_Response(
 			array(
 				'success'      => false,

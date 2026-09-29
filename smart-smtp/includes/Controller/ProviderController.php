@@ -213,11 +213,15 @@ class ProviderController {
 			}
 		}
 		if ( isset( $sanitized_form_data['smtp_is_active'] ) ) {
-			$is_checked = $sanitized_form_data['smtp_is_active'];
+			$is_checked    = $sanitized_form_data['smtp_is_active'];
+			$provider_type = $sanitized_form_data['providerType'];
 
-			if ( $is_checked ) {
-				$provider_type = $sanitized_form_data['providerType'];
-				$res           = $this->set_active_provider_by_conn( $conn, $provider_type, $is_checked );
+			// Only touch the active-provider slot when activating this card, or
+			// explicitly deactivating the provider that IS currently active —
+			// saving an unrelated inactive card must never clear a different
+			// provider's active status.
+			if ( $is_checked || $this->provider->get_provider_type( $conn ) === $provider_type ) {
+				$res = $this->set_active_provider_by_conn( $conn, $provider_type, $is_checked );
 			}
 
 			unset( $sanitized_form_data['smtp_is_active'] );

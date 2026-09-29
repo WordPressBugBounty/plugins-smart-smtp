@@ -540,6 +540,22 @@ class Services {
 
 			$send = $basemailer->send( $mail_data );
 
+			// Some providers fail by returning WP_Error/false instead of throwing.
+			// Treat that the same as a caught exception, not a successful send.
+			if ( is_wp_error( $send ) || false === $send ) {
+				$message = is_wp_error( $send ) ? $send->get_error_message() : esc_html__( 'Send failed.', 'smart-smtp' );
+
+				do_action( 'wp_mail_failed', new \WP_Error( 'wp_mail_failed', $message, $mail_data ) );
+
+				self::$response_message = array(
+					'res'     => false,
+					'message' => $message,
+					'code'    => 400,
+				);
+
+				return false;
+			}
+
 			do_action( 'wp_mail_succeeded', $mail_data );
 			self::$response_message = $send;
 

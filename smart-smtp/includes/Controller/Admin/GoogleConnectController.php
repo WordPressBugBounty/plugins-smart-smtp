@@ -181,7 +181,7 @@ class GoogleConnectController {
 		}
 
 		// ── Persist tokens ────────────────────────────────────────────────────
-		$this->save_tokens( $token_response, $client_secret, $conn );
+		$this->save_tokens( $token_response, $client_secret, $conn, $client_id );
 
 		$this->redirect_with_notice( 'success', __( 'Google account connected successfully!', 'smart-smtp' ), $conn );
 	}
@@ -346,13 +346,16 @@ class GoogleConnectController {
 	/**
 	 * Exchange the authorization code for access + refresh tokens.
 	 *
-	 * Pure PKCE — no client_secret is sent. Google validates the code_verifier
-	 * against the code_challenge that was included in the authorization request.
+	 * Also sends client_secret alongside the PKCE code_verifier: this OAuth
+	 * client is registered as a confidential "Web application" type, which
+	 * Google requires client_secret for on every grant — not pure PKCE.
 	 *
 	 * @since 1.1.3
 	 *
 	 * @param string $code          Authorization code from Google (via API callback).
 	 * @param string $code_verifier The original random verifier saved in the transient.
+	 * @param string $client_id     The OAuth client ID.
+	 * @param string $client_secret The OAuth client secret.
 	 * @return array|\WP_Error Token response array on success, WP_Error on failure.
 	 */
 	private function exchange_code( string $code, string $code_verifier, string $client_id, string $client_secret ) {
@@ -411,11 +414,21 @@ class GoogleConnectController {
 	 *
 	 * @since 1.1.3
 	 *
-	 * @param array $token_response Decoded JSON response from the Google token endpoint.
+	 * @param array  $token_response Decoded JSON response from the Google token endpoint.
+	 * @param string $client_secret  The OAuth client secret.
+	 * @param string $conn           The connection slot.
+	 * @param string $client_id      The OAuth client ID.
 	 */
-	private function save_tokens( array $token_response, string $client_secret = '', string $conn = 'primary' ): void {
+	private function save_tokens( array $token_response, string $client_secret = '', string $conn = 'primary', string $client_id = '' ): void {
 		$prov_ctrl = new ProviderController();
 		$settings  = $prov_ctrl->get_provider_config_by_conn( $conn, 'gmail' );
+
+		// Google's raw response has no 'created' field. Stamp one now so
+		// GmailSettings::get_client() can tell a fresh token from an expired
+		// one, instead of treating every newly connected token as expired.
+		if ( ! isset( $token_response['created'] ) ) {
+			$token_response['created'] = time();
+		}
 
 		// Preserve existing config and update token fields.
 		$settings['providerType']  = 'gmail';
@@ -423,12 +436,19 @@ class GoogleConnectController {
 		$settings['refresh_token'] = $token_response['refresh_token'];
 		$settings['auth_token']    = ''; // clear legacy auth-code field
 
-		// Store client_secret so Google_Client can refresh tokens later.
+		// Store client_secret and client_id so Google_Client can refresh tokens later.
 		if ( ! empty( $client_secret ) ) {
 			$settings['client_secret'] = $client_secret;
 		}
+		if ( ! empty( $client_id ) ) {
+			$settings['client_id'] = $client_id;
+		}
 
 		$prov_ctrl->update_provider_config_by_conn( $conn, $settings );
+
+		// A fresh successful connect clears any earlier "please reconnect"
+		// state left over from a previous failed refresh.
+		delete_option( 'smart_smtp_gmail_reconnect_required_' . $conn );
 	}
 
 	// -------------------------------------------------------------------------

@@ -1,6 +1,12 @@
 
 == Changelog ==
 
+= 1.2.2   - 29-09-2026 =
+* Fix     - Gmail one-click connection tokens not refreshing.
+* Fix     - Failed emails logged as Sent and reported as successful.
+* Fix     - Provider activation failing silently.
+* Fix     - Resend from Mail Logs stripping the email's HTML head.
+
 = 1.2.1   - 17-08-2026 =
 * Fix     - Mail Logs viewer with server-side sanitization and sandboxed iframe rendering.
 

@@ -116,16 +116,31 @@ class Mailer extends MailerAbstract {
 			// human-readable message instead of dumping the full error payload. Returning
 			// a WP_Error (rather than throwing) is fine — BaseMailer treats a WP_Error
 			// result from the primary as a failure and triggers the fallback connection.
-			$code = (int) $e->getCode();
-
-			if ( 401 === $code || 403 === $code ) {
-				$friendly = esc_html__( 'Gmail authentication failed. Please reconnect your Google account.', 'smart-smtp' );
-			} else {
-				$friendly = esc_html__( 'Could not send the email through Gmail. Please try again.', 'smart-smtp' );
-			}
-
-			return new \WP_Error( 422, $friendly, array() );
+			return new \WP_Error( 422, $this->resolve_error_message( (int) $e->getCode() ), array() );
 		}
+	}
+
+	/**
+	 * Map a Gmail API failure to a human-readable message.
+	 *
+	 * A 401/403 is always an auth failure. But a failed token refresh (e.g.
+	 * a legacy connection with no usable client_id) throws with a different
+	 * code from google/apiclient, not 401/403 — GmailSettings::get_client()
+	 * flags that case explicitly, so check for it too rather than only the
+	 * status codes a live API call can return.
+	 *
+	 * @param int $code The exception code from the failed API call.
+	 * @return string
+	 */
+	private function resolve_error_message( int $code ): string {
+		$reconnect_required = 401 === $code || 403 === $code
+			|| get_option( 'smart_smtp_gmail_reconnect_required_' . $this->conn );
+
+		if ( $reconnect_required ) {
+			return esc_html__( 'Gmail authentication failed. Please reconnect your Google account.', 'smart-smtp' );
+		}
+
+		return esc_html__( 'Could not send the email through Gmail. Please try again.', 'smart-smtp' );
 	}
 
 
